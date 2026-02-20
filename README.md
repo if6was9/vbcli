@@ -81,6 +81,8 @@ vbcli send-raw '[[72,69,76,76,79],[0,0,0,0,0]]'
 cat chars.json | vbcli send-raw -
 ```
 
+If no positional argument is provided, `send-raw` reads from stdin automatically.
+
 #### `send`
 
 Render template text through VBML, then send resulting `characters` to the Cloud API.
@@ -102,6 +104,8 @@ vbcli send -m note -a top -j left "Hello\nworld"
 vbcli send "hello {green}"
 echo "From stdin" | vbcli send -
 ```
+
+If no positional argument is provided, `send` reads from stdin automatically.
 
 #### `format`
 

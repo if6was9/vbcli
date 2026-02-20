@@ -42,6 +42,7 @@ Global flags:
 Notes:
 
 - `-` means read full input from stdin.
+- For `send` and `send-raw`, positional arg is optional; when omitted, read stdin.
 - `text` command does not exist (it was removed intentionally).
 
 ## Environment Variables

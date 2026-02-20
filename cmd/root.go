@@ -46,24 +46,24 @@ func NewRootCmd(stdin io.Reader, stdout, stderr io.Writer) *cobra.Command {
 	cmd.PersistentFlags().BoolVarP(&opts.verbose, "verbose", "v", false, "Enable verbose HTTP logging")
 
 	sendRawCmd := &cobra.Command{
-		Use:   "send-raw <characters-json|->",
+		Use:   "send-raw [characters-json|-]",
 		Short: "Send raw characters payload to the Vestaboard API",
-		Args:  exactArgsWithHelp(1),
+		Args:  maxArgsWithHelp(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return runRaw(cmd, stdin, stdout, stderr, opts, args[0])
+			return runRaw(cmd, stdin, stdout, stderr, opts, args)
 		},
 	}
 
 	sendCmd := &cobra.Command{
-		Use:   "send <message|->",
+		Use:   "send [message|-]",
 		Short: "Render template text via VBML then send characters to the Vestaboard API",
-		Args:  exactArgsWithHelp(1),
+		Args:  maxArgsWithHelp(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			formatOnly, err := cmd.Flags().GetBool("format")
 			if err != nil {
 				return err
 			}
-			return runSend(cmd, stdin, stdout, stderr, opts, args[0], formatOnly)
+			return runSend(cmd, stdin, stdout, stderr, opts, args, formatOnly)
 		},
 	}
 	sendCmd.Flags().StringVarP(&opts.model, flagModel, "m", "", "VBML model for send: flagship or note")
@@ -76,7 +76,7 @@ func NewRootCmd(stdin io.Reader, stdout, stderr io.Writer) *cobra.Command {
 		Short: "Format template text via VBML and print characters JSON",
 		Args:  exactArgsWithHelp(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return runSend(cmd, stdin, stdout, stderr, opts, args[0], true)
+			return runSend(cmd, stdin, stdout, stderr, opts, args, true)
 		},
 	}
 	formatCmd.Flags().StringVarP(&opts.model, flagModel, "m", "", "VBML model for format: flagship or note")
@@ -88,7 +88,7 @@ func NewRootCmd(stdin io.Reader, stdout, stderr io.Writer) *cobra.Command {
 		Short: "Clear the display (equivalent to `vbcli send ''`)",
 		Args:  exactArgsWithHelp(0),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return runSend(cmd, stdin, stdout, stderr, opts, "", false)
+			return runSend(cmd, stdin, stdout, stderr, opts, []string{""}, false)
 		},
 	}
 	clearCmd.Flags().StringVarP(&opts.model, flagModel, "m", "", "VBML model for clear: flagship or note")
@@ -114,16 +114,16 @@ func NewRootCmd(stdin io.Reader, stdout, stderr io.Writer) *cobra.Command {
 	return cmd
 }
 
-func runRaw(cmd *cobra.Command, stdin io.Reader, stdout, stderr io.Writer, opts *options, value string) error {
+func runRaw(cmd *cobra.Command, stdin io.Reader, stdout, stderr io.Writer, opts *options, args []string) error {
 	ctx := cmd.Context()
 	client, err := buildClient(stderr, opts)
 	if err != nil {
 		return err
 	}
 
-	resolved, err := resolveValue(stdin, value)
+	resolved, err := resolveCommandInput(cmd, stdin, args, "characters-json")
 	if err != nil {
-		return fmt.Errorf("read input: %w", err)
+		return err
 	}
 	characters, err := parseCharacters(resolved)
 	if err != nil {
@@ -135,16 +135,16 @@ func runRaw(cmd *cobra.Command, stdin io.Reader, stdout, stderr io.Writer, opts 
 	return nil
 }
 
-func runSend(cmd *cobra.Command, stdin io.Reader, stdout, stderr io.Writer, opts *options, value string, formatOnly bool) error {
+func runSend(cmd *cobra.Command, stdin io.Reader, stdout, stderr io.Writer, opts *options, args []string, formatOnly bool) error {
 	ctx := cmd.Context()
 	client, err := buildClient(stderr, opts)
 	if err != nil {
 		return err
 	}
 
-	resolved, err := resolveValue(stdin, value)
+	resolved, err := resolveCommandInput(cmd, stdin, args, "message")
 	if err != nil {
-		return fmt.Errorf("read input: %w", err)
+		return err
 	}
 	model, err := resolveModel(opts.model)
 	if err != nil {
@@ -293,6 +293,48 @@ func exactArgsWithHelp(n int) cobra.PositionalArgs {
 		_ = cmd.Help()
 		return fmt.Errorf("accepts %d arg(s), received %d", n, len(args))
 	}
+}
+
+func maxArgsWithHelp(n int) cobra.PositionalArgs {
+	return func(cmd *cobra.Command, args []string) error {
+		if len(args) <= n {
+			return nil
+		}
+		_ = cmd.Help()
+		return fmt.Errorf("accepts at most %d arg(s), received %d", n, len(args))
+	}
+}
+
+func resolveCommandInput(cmd *cobra.Command, stdin io.Reader, args []string, argName string) (string, error) {
+	if len(args) == 1 {
+		value, err := resolveValue(stdin, args[0])
+		if err != nil {
+			return "", fmt.Errorf("read input: %w", err)
+		}
+		return value, nil
+	}
+
+	if stdinIsTerminal(stdin) {
+		return "", usageError(cmd, fmt.Errorf("missing %s argument (or pipe stdin)", argName))
+	}
+
+	data, err := io.ReadAll(stdin)
+	if err != nil {
+		return "", fmt.Errorf("read input: %w", err)
+	}
+	return strings.TrimSpace(string(data)), nil
+}
+
+func stdinIsTerminal(stdin io.Reader) bool {
+	file, ok := stdin.(*os.File)
+	if !ok {
+		return false
+	}
+	info, err := file.Stat()
+	if err != nil {
+		return false
+	}
+	return (info.Mode() & os.ModeCharDevice) != 0
 }
 
 func resolveValue(stdin io.Reader, value string) (string, error) {

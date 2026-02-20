@@ -2,8 +2,11 @@ package cmd
 
 import (
 	"bytes"
+	"os"
 	"strings"
 	"testing"
+
+	"github.com/spf13/cobra"
 )
 
 func TestResolveValue(t *testing.T) {
@@ -231,6 +234,44 @@ func TestGetLayoutExtractionMissing(t *testing.T) {
 	t.Parallel()
 
 	if _, err := extractLayout([]byte(`{"currentMessage":{"id":"x"}}`)); err == nil {
+		t.Fatal("expected error")
+	}
+}
+
+func TestResolveCommandInputFromStdinWhenArgMissing(t *testing.T) {
+	t.Parallel()
+
+	cmd := &cobra.Command{Use: "send"}
+	got, err := resolveCommandInput(cmd, strings.NewReader("hello from stdin\n"), nil, "message")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if got != "hello from stdin" {
+		t.Fatalf("got %q, want %q", got, "hello from stdin")
+	}
+}
+
+func TestMaxArgsWithHelp(t *testing.T) {
+	t.Parallel()
+
+	cmd := &cobra.Command{Use: "send"}
+	if err := maxArgsWithHelp(1)(cmd, []string{"a"}); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if err := maxArgsWithHelp(1)(cmd, []string{"a", "b"}); err == nil {
+		t.Fatal("expected error")
+	}
+}
+
+func TestResolveCommandInputMissingArgOnTerminal(t *testing.T) {
+	devNull, err := os.Open("/dev/null")
+	if err != nil {
+		t.Skipf("unable to open /dev/null: %v", err)
+	}
+	defer devNull.Close()
+
+	cmd := &cobra.Command{Use: "send"}
+	if _, err := resolveCommandInput(cmd, devNull, nil, "message"); err == nil {
 		t.Fatal("expected error")
 	}
 }
