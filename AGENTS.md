@@ -18,7 +18,7 @@ This file defines project-specific guidance for coding agents working in `vbcli`
 
 Top-level commands:
 
-- `vbcli raw <characters-json|->`
+- `vbcli send-raw <characters-json|->`
 - `vbcli send <message|->`
 
 Global flags:
@@ -52,7 +52,7 @@ Cloud API write call:
 
 - Endpoint: `POST https://cloud.vestaboard.com/`
 - Content type: `application/json`
-- Payload shape for `raw` and final `send` step:
+- Payload shape for `send-raw` and final `send` step:
   - `{"characters": [[...], ...]}`
 
 VBML compose call (`send` command):
@@ -79,7 +79,7 @@ For `send` input:
 2. Substitute named `{alias}` tokens to numeric codes (for example `{green}` -> `{66}`).
 3. Preserve VBML `{{...}}` expressions as-is.
 
-For `raw` input:
+For `send-raw` input:
 
 - Must parse as JSON array of arrays of integers.
 
@@ -100,4 +100,3 @@ When `--verbose` is enabled, log for each HTTP request:
 - Update tests with behavior changes.
 - Run `go test ./...` after edits.
 - Keep `README.md` user-facing; keep this file agent-facing.
-

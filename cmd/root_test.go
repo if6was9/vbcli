@@ -216,7 +216,7 @@ func TestSubcommandsExist(t *testing.T) {
 	t.Parallel()
 
 	root := NewRootCmd(strings.NewReader(""), &bytes.Buffer{}, &bytes.Buffer{})
-	want := map[string]bool{"raw": false, "send": false}
+	want := map[string]bool{"send-raw": false, "send": false}
 	for _, sub := range root.Commands() {
 		if _, ok := want[sub.Name()]; ok {
 			want[sub.Name()] = true

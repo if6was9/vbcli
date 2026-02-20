@@ -4,7 +4,7 @@
 
 ## Features
 
-- Send raw character payloads (`raw`)
+- Send raw character payloads (`send-raw`)
 - Render VBML templates and send the result (`send`)
 - Read message input from stdin (`-`)
 - Verbose HTTP debugging (`--verbose`)
@@ -60,7 +60,7 @@ vbcli [global flags] <command> <arg>
 
 ### Commands
 
-#### `raw`
+#### `send-raw`
 
 Send a raw `characters` matrix (JSON array of arrays).  
 Request payload:
@@ -74,8 +74,8 @@ Request payload:
 Examples:
 
 ```bash
-vbcli raw '[[72,69,76,76,79],[0,0,0,0,0]]'
-cat chars.json | vbcli raw -
+vbcli send-raw '[[72,69,76,76,79],[0,0,0,0,0]]'
+cat chars.json | vbcli send-raw -
 ```
 
 #### `send`
@@ -122,7 +122,7 @@ Numeric codes are also supported directly (for example `{66}`).
 ```bash
 vbcli --help
 vbcli help
-vbcli raw --help
+vbcli send-raw --help
 vbcli send --help
 ```
 

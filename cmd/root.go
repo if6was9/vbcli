@@ -37,7 +37,7 @@ func NewRootCmd(stdin io.Reader, stdout, stderr io.Writer) *cobra.Command {
 		SilenceErrors: true,
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			_ = cmd.Help()
-			return errors.New("a subcommand is required: raw or send")
+			return errors.New("a subcommand is required: send-raw or send")
 		},
 	}
 
@@ -45,8 +45,8 @@ func NewRootCmd(stdin io.Reader, stdout, stderr io.Writer) *cobra.Command {
 	cmd.SetErr(stderr)
 	cmd.PersistentFlags().BoolVarP(&opts.verbose, "verbose", "v", false, "Enable verbose HTTP logging")
 
-	rawCmd := &cobra.Command{
-		Use:   "raw <characters-json|->",
+	sendRawCmd := &cobra.Command{
+		Use:   "send-raw <characters-json|->",
 		Short: "Send raw characters payload to the Vestaboard API",
 		Args:  exactArgsWithHelp(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -66,7 +66,7 @@ func NewRootCmd(stdin io.Reader, stdout, stderr io.Writer) *cobra.Command {
 	sendCmd.Flags().StringVarP(&opts.align, "align", "a", "center", "VBML align for send: top, center, or bottom")
 	sendCmd.Flags().StringVarP(&opts.justify, "justify", "j", "center", "VBML justify for send: left, center, right, or justified")
 
-	cmd.AddCommand(rawCmd, sendCmd)
+	cmd.AddCommand(sendRawCmd, sendCmd)
 
 	return cmd
 }
