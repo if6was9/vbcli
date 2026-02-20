@@ -385,7 +385,18 @@ func resolveTransitionSpeed(value string) (string, error) {
 
 func looksLikeRawCharactersJSON(input string) bool {
 	trimmed := strings.TrimSpace(input)
-	return strings.HasPrefix(trimmed, "[") && strings.HasSuffix(trimmed, "]")
+	if len(trimmed) < 10 {
+		return false
+	}
+	if !strings.HasPrefix(trimmed, "[") || !strings.HasSuffix(trimmed, "]") {
+		return false
+	}
+
+	var characters [][]int
+	if err := json.Unmarshal([]byte(trimmed), &characters); err != nil {
+		return false
+	}
+	return true
 }
 
 func usageError(cmd *cobra.Command, err error) error {

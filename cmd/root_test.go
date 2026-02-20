@@ -329,8 +329,17 @@ func TestLooksLikeRawCharactersJSON(t *testing.T) {
 	if !looksLikeRawCharactersJSON(" [[1,2],[3,4]] ") {
 		t.Fatal("expected true for bracketed JSON-like input")
 	}
+	if looksLikeRawCharactersJSON("[]") {
+		t.Fatal("expected false for short input")
+	}
+	if looksLikeRawCharactersJSON(" [ [1] ] ") {
+		t.Fatal("expected false for short input")
+	}
 	if looksLikeRawCharactersJSON("hello [1,2]") {
 		t.Fatal("expected false when input is not fully bracketed")
+	}
+	if looksLikeRawCharactersJSON("[not-json]") {
+		t.Fatal("expected false for malformed bracketed input")
 	}
 	if looksLikeRawCharactersJSON("{\"characters\":[[1]]}") {
 		t.Fatal("expected false for object JSON")
