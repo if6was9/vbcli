@@ -6,6 +6,7 @@
 
 - Send raw character payloads (`send-raw`)
 - Render VBML templates and send the result (`send`)
+- Render VBML templates only (`format`)
 - Clear the display (`clear`)
 - Fetch current display state (`get`)
 - Read message input from stdin (`-`)
@@ -89,6 +90,7 @@ Template flags:
 - `-m, --model`: `flagship` (default) or `note`
 - `-a, --align`: `top`, `center` (default), `bottom`
 - `-j, --justify`: `left`, `center` (default), `right`, `justified`
+- `--format`: print VBML compose output JSON and skip sending to Cloud API
 
 When `--model note` is used, VBML style dimensions are set to `height: 3`, `width: 15`.
 
@@ -99,6 +101,21 @@ vbcli send "Hello {{now}}"
 vbcli send -m note -a top -j left "Hello\nworld"
 vbcli send "hello {green}"
 echo "From stdin" | vbcli send -
+```
+
+#### `format`
+
+Format template text through VBML and print the resulting `characters` JSON to stdout.  
+Equivalent to `send --format`.
+
+Flags are the same as `send` (`-m`, `-a`, `-j`).
+
+Examples:
+
+```bash
+vbcli format "Hello {{now}}"
+vbcli format -m note -a top -j left "hello {green}"
+echo "From stdin" | vbcli format -
 ```
 
 #### `clear`
@@ -154,6 +171,7 @@ vbcli --help
 vbcli help
 vbcli send-raw --help
 vbcli send --help
+vbcli format --help
 vbcli clear --help
 vbcli get --help
 ```

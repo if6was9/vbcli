@@ -210,6 +210,9 @@ func TestTemplateLayoutFlagShorthands(t *testing.T) {
 	if got := sendCmd.Flags().ShorthandLookup("j"); got == nil || got.Name != "justify" {
 		t.Fatalf("expected -j shorthand for --justify")
 	}
+	if got := sendCmd.Flags().Lookup("format"); got == nil {
+		t.Fatalf("expected --format flag for send")
+	}
 }
 
 func TestGetLayoutExtraction(t *testing.T) {
@@ -236,7 +239,7 @@ func TestSubcommandsExist(t *testing.T) {
 	t.Parallel()
 
 	root := NewRootCmd(strings.NewReader(""), &bytes.Buffer{}, &bytes.Buffer{})
-	want := map[string]bool{"send-raw": false, "send": false, "clear": false, "get": false}
+	want := map[string]bool{"send-raw": false, "send": false, "format": false, "clear": false, "get": false}
 	for _, sub := range root.Commands() {
 		if _, ok := want[sub.Name()]; ok {
 			want[sub.Name()] = true

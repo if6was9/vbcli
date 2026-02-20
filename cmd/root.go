@@ -37,7 +37,7 @@ func NewRootCmd(stdin io.Reader, stdout, stderr io.Writer) *cobra.Command {
 		SilenceErrors: true,
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			_ = cmd.Help()
-			return errors.New("a subcommand is required: send-raw, send, clear, or get")
+			return errors.New("a subcommand is required: send-raw, send, format, clear, or get")
 		},
 	}
 
@@ -59,19 +59,36 @@ func NewRootCmd(stdin io.Reader, stdout, stderr io.Writer) *cobra.Command {
 		Short: "Render template text via VBML then send characters to the Vestaboard API",
 		Args:  exactArgsWithHelp(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return runSend(cmd, stdin, stdout, stderr, opts, args[0])
+			formatOnly, err := cmd.Flags().GetBool("format")
+			if err != nil {
+				return err
+			}
+			return runSend(cmd, stdin, stdout, stderr, opts, args[0], formatOnly)
 		},
 	}
 	sendCmd.Flags().StringVarP(&opts.model, flagModel, "m", "", "VBML model for send: flagship or note")
 	sendCmd.Flags().StringVarP(&opts.align, "align", "a", "center", "VBML align for send: top, center, or bottom")
 	sendCmd.Flags().StringVarP(&opts.justify, "justify", "j", "center", "VBML justify for send: left, center, right, or justified")
+	sendCmd.Flags().Bool("format", false, "Print VBML compose output and skip sending to Cloud API")
+
+	formatCmd := &cobra.Command{
+		Use:   "format <message|->",
+		Short: "Format template text via VBML and print characters JSON",
+		Args:  exactArgsWithHelp(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return runSend(cmd, stdin, stdout, stderr, opts, args[0], true)
+		},
+	}
+	formatCmd.Flags().StringVarP(&opts.model, flagModel, "m", "", "VBML model for format: flagship or note")
+	formatCmd.Flags().StringVarP(&opts.align, "align", "a", "center", "VBML align for format: top, center, or bottom")
+	formatCmd.Flags().StringVarP(&opts.justify, "justify", "j", "center", "VBML justify for format: left, center, right, or justified")
 
 	clearCmd := &cobra.Command{
 		Use:   "clear",
 		Short: "Clear the display (equivalent to `vbcli send ''`)",
 		Args:  exactArgsWithHelp(0),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return runSend(cmd, stdin, stdout, stderr, opts, "")
+			return runSend(cmd, stdin, stdout, stderr, opts, "", false)
 		},
 	}
 	clearCmd.Flags().StringVarP(&opts.model, flagModel, "m", "", "VBML model for clear: flagship or note")
@@ -92,7 +109,7 @@ func NewRootCmd(stdin io.Reader, stdout, stderr io.Writer) *cobra.Command {
 	}
 	getCmd.Flags().BoolP("layout", "l", false, "Print only currentMessage.layout")
 
-	cmd.AddCommand(sendRawCmd, sendCmd, clearCmd, getCmd)
+	cmd.AddCommand(sendRawCmd, sendCmd, formatCmd, clearCmd, getCmd)
 
 	return cmd
 }
@@ -118,7 +135,7 @@ func runRaw(cmd *cobra.Command, stdin io.Reader, stdout, stderr io.Writer, opts 
 	return nil
 }
 
-func runSend(cmd *cobra.Command, stdin io.Reader, stdout, stderr io.Writer, opts *options, value string) error {
+func runSend(cmd *cobra.Command, stdin io.Reader, stdout, stderr io.Writer, opts *options, value string, formatOnly bool) error {
 	ctx := cmd.Context()
 	client, err := buildClient(stderr, opts)
 	if err != nil {
@@ -147,6 +164,16 @@ func runSend(cmd *cobra.Command, stdin io.Reader, stdout, stderr io.Writer, opts
 	characters, err := client.FormatMessage(ctx, resolved, model, align, justify)
 	if err != nil {
 		return err
+	}
+	if formatOnly {
+		out, err := json.Marshal(characters)
+		if err != nil {
+			return fmt.Errorf("encode formatted output: %w", err)
+		}
+		if _, err := fmt.Fprintln(stdout, string(out)); err != nil {
+			return fmt.Errorf("write output: %w", err)
+		}
+		return nil
 	}
 	if err := client.SendCharacters(ctx, characters); err != nil {
 		return err

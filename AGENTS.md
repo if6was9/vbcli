@@ -20,6 +20,7 @@ Top-level commands:
 
 - `vbcli send-raw <characters-json|->`
 - `vbcli send <message|->`
+- `vbcli format <message|->`
 - `vbcli clear`
 - `vbcli get`
 
@@ -32,6 +33,9 @@ Global flags:
 - `-m, --model` (`flagship` or `note`)
 - `-a, --align` (`top`, `center`, `bottom`)
 - `-j, --justify` (`left`, `center`, `right`, `justified`)
+- `--format` (print VBML compose output and skip Cloud API send)
+
+`format` supports the same layout/model flags as `send` and always behaves like `send --format`.
 
 `clear` supports the same layout/model flags as `send`.
 
