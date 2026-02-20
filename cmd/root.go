@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"bytes"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -39,7 +40,7 @@ func NewRootCmd(stdin io.Reader, stdout, stderr io.Writer) *cobra.Command {
 		SilenceErrors: true,
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			_ = cmd.Help()
-			return errors.New("a subcommand is required: send-raw, send, format, clear, get, or set-transition")
+			return errors.New("a subcommand is required: send-raw, send, format, clear, get, set-transition, or get-transition")
 		},
 	}
 
@@ -124,7 +125,16 @@ func NewRootCmd(stdin io.Reader, stdout, stderr io.Writer) *cobra.Command {
 	_ = setTransitionCmd.MarkFlagRequired("type")
 	_ = setTransitionCmd.MarkFlagRequired("speed")
 
-	cmd.AddCommand(sendRawCmd, sendCmd, formatCmd, clearCmd, getCmd, setTransitionCmd)
+	getTransitionCmd := &cobra.Command{
+		Use:   "get-transition",
+		Short: "Fetch transition settings as JSON",
+		Args:  exactArgsWithHelp(0),
+		RunE: func(cmd *cobra.Command, _ []string) error {
+			return runGetTransition(cmd, stdout, stderr, opts)
+		},
+	}
+
+	cmd.AddCommand(sendRawCmd, sendCmd, formatCmd, clearCmd, getCmd, setTransitionCmd, getTransitionCmd)
 
 	return cmd
 }
@@ -244,6 +254,27 @@ func runSetTransition(cmd *cobra.Command, stderr io.Writer, opts *options) error
 	return client.SetTransition(ctx, transitionType, transitionSpeed)
 }
 
+func runGetTransition(cmd *cobra.Command, stdout, stderr io.Writer, opts *options) error {
+	ctx := cmd.Context()
+	client, err := buildClient(stderr, opts)
+	if err != nil {
+		return err
+	}
+
+	body, err := client.GetTransition(ctx)
+	if err != nil {
+		return err
+	}
+	pretty, err := prettyPrintJSON(body)
+	if err != nil {
+		return err
+	}
+	if _, err := fmt.Fprintln(stdout, string(pretty)); err != nil {
+		return fmt.Errorf("write output: %w", err)
+	}
+	return nil
+}
+
 func extractLayout(stateJSON []byte) (string, error) {
 	var payload struct {
 		CurrentMessage struct {
@@ -257,6 +288,14 @@ func extractLayout(stateJSON []byte) (string, error) {
 		return "", errors.New("currentMessage.layout not found")
 	}
 	return payload.CurrentMessage.Layout, nil
+}
+
+func prettyPrintJSON(raw []byte) ([]byte, error) {
+	var out bytes.Buffer
+	if err := json.Indent(&out, raw, "", "  "); err != nil {
+		return nil, fmt.Errorf("decode API response: %w", err)
+	}
+	return out.Bytes(), nil
 }
 
 func buildClient(stderr io.Writer, opts *options) (*vestaboard.Client, error) {

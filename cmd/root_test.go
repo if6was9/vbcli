@@ -310,11 +310,24 @@ func TestResolveCommandInputMissingArgOnTerminal(t *testing.T) {
 	}
 }
 
+func TestPrettyPrintJSON(t *testing.T) {
+	t.Parallel()
+
+	raw := []byte(`{"a":1,"b":{"c":2}}`)
+	got, err := prettyPrintJSON(raw)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if !strings.Contains(string(got), "\n  \"a\": 1,") {
+		t.Fatalf("expected indented output, got: %s", string(got))
+	}
+}
+
 func TestSubcommandsExist(t *testing.T) {
 	t.Parallel()
 
 	root := NewRootCmd(strings.NewReader(""), &bytes.Buffer{}, &bytes.Buffer{})
-	want := map[string]bool{"send-raw": false, "send": false, "format": false, "clear": false, "get": false, "set-transition": false}
+	want := map[string]bool{"send-raw": false, "send": false, "format": false, "clear": false, "get": false, "set-transition": false, "get-transition": false}
 	for _, sub := range root.Commands() {
 		if _, ok := want[sub.Name()]; ok {
 			want[sub.Name()] = true

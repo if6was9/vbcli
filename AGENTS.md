@@ -24,6 +24,7 @@ Top-level commands:
 - `vbcli clear`
 - `vbcli get`
 - `vbcli set-transition --type <...> --speed <...>`
+- `vbcli get-transition`
 
 Global flags:
 
@@ -77,6 +78,7 @@ Transition API call:
 - Payload:
   - `transition`: `classic|wave|drift|curtain`
   - `transitionSpeed`: `fast|gentle`
+- `GET /transition` returns transition settings JSON; `get-transition` pretty-prints it.
 
 VBML compose call (`send` command):
 

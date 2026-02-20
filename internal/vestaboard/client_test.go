@@ -355,3 +355,33 @@ func TestSetTransition(t *testing.T) {
 		t.Fatalf("unexpected payload: %#v", gotBody)
 	}
 }
+
+func TestGetTransition(t *testing.T) {
+	t.Parallel()
+
+	var gotMethod string
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		gotMethod = r.Method
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		_, _ = w.Write([]byte(`{"transition":"wave","transitionSpeed":"fast"}`))
+	}))
+	defer server.Close()
+
+	client := &Client{
+		baseURL:    server.URL,
+		apiKey:     "abc123",
+		httpClient: server.Client(),
+	}
+
+	body, err := client.GetTransition(context.Background())
+	if err != nil {
+		t.Fatalf("get transition: %v", err)
+	}
+	if gotMethod != http.MethodGet {
+		t.Fatalf("method = %q, want %q", gotMethod, http.MethodGet)
+	}
+	if strings.TrimSpace(string(body)) != `{"transition":"wave","transitionSpeed":"fast"}` {
+		t.Fatalf("unexpected body: %s", string(body))
+	}
+}

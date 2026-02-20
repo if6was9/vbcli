@@ -10,6 +10,7 @@
 - Clear the display (`clear`)
 - Fetch current display state (`get`)
 - Set transition options (`set-transition`)
+- Fetch transition settings (`get-transition`)
 - Read message input from stdin (`-`)
 - Verbose HTTP debugging (`--verbose`)
 
@@ -167,6 +168,16 @@ vbcli set-transition --type wave --speed fast
 vbcli set-transition --type curtain --speed gentle
 ```
 
+#### `get-transition`
+
+Fetch transition settings and pretty-print JSON to stdout.
+
+Example:
+
+```bash
+vbcli get-transition
+```
+
 ## Template special aliases
 
 For `send`, named codes in `{...}` are converted before VBML (for example `{green}` -> `{66}`).
@@ -196,6 +207,7 @@ vbcli format --help
 vbcli clear --help
 vbcli get --help
 vbcli set-transition --help
+vbcli get-transition --help
 ```
 
 ## Development

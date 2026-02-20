@@ -134,6 +134,34 @@ func (c *Client) SetTransition(ctx context.Context, transitionType, transitionSp
 	return nil
 }
 
+func (c *Client) GetTransition(ctx context.Context) ([]byte, error) {
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, c.baseURL+"/transition", nil)
+	if err != nil {
+		return nil, fmt.Errorf("build request: %w", err)
+	}
+	req.Header.Set(headerName, c.apiKey)
+	req.Header.Set("Accept", "application/json")
+	c.logHTTP("request", req.URL.String(), nil, 0)
+
+	resp, err := c.httpClient.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("send request: %w", err)
+	}
+	defer resp.Body.Close()
+
+	respBody, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, fmt.Errorf("read API response: %w", err)
+	}
+	c.logHTTP("response", req.URL.String(), respBody, resp.StatusCode)
+
+	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+		return nil, fmt.Errorf("vestaboard API returned %s: %s", resp.Status, strings.TrimSpace(string(respBody)))
+	}
+
+	return respBody, nil
+}
+
 func (c *Client) FormatMessage(ctx context.Context, message, model, align, justify string) ([][]int, error) {
 	payload := map[string]any{
 		"components": []map[string]any{
