@@ -1,4 +1,4 @@
-[!vbcli.png]ó
+![vbcli](vbcli.png)
 
 # vbcli
 
