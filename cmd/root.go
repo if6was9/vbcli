@@ -120,7 +120,7 @@ func NewRootCmd(stdin io.Reader, stdout, stderr io.Writer) *cobra.Command {
 		},
 	}
 	setTransitionCmd.Flags().StringVar(&opts.transitionType, "type", "", "Transition type: classic, wave, drift, curtain")
-	setTransitionCmd.Flags().StringVar(&opts.transitionSpeed, "speed", "", "Transition speed: fast or genle")
+	setTransitionCmd.Flags().StringVar(&opts.transitionSpeed, "speed", "", "Transition speed: fast or gentle")
 	_ = setTransitionCmd.MarkFlagRequired("type")
 	_ = setTransitionCmd.MarkFlagRequired("speed")
 
@@ -329,10 +329,10 @@ func resolveTransitionSpeed(value string) (string, error) {
 	switch v {
 	case "fast":
 		return "fast", nil
-	case "genle", "gentle":
+	case "gentle":
 		return "gentle", nil
 	default:
-		return "", fmt.Errorf("invalid --speed %q (expected \"fast\" or \"genle\")", value)
+		return "", fmt.Errorf("invalid --speed %q (expected \"fast\" or \"gentle\")", value)
 	}
 }
 

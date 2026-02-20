@@ -263,10 +263,6 @@ func TestResolveTransitionSpeed(t *testing.T) {
 	if err != nil || got != "fast" {
 		t.Fatalf("got %q, err %v", got, err)
 	}
-	got, err = resolveTransitionSpeed("genle")
-	if err != nil || got != "gentle" {
-		t.Fatalf("got %q, err %v", got, err)
-	}
 	got, err = resolveTransitionSpeed("gentle")
 	if err != nil || got != "gentle" {
 		t.Fatalf("got %q, err %v", got, err)

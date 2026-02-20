@@ -158,13 +158,13 @@ Set transition type and speed via the transition API.
 Required flags:
 
 - `--type`: `classic`, `wave`, `drift`, `curtain`
-- `--speed`: `fast` or `genle`
+- `--speed`: `fast` or `gentle`
 
 Examples:
 
 ```bash
 vbcli set-transition --type wave --speed fast
-vbcli set-transition --type curtain --speed genle
+vbcli set-transition --type curtain --speed gentle
 ```
 
 ## Template special aliases
