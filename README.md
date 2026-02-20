@@ -9,6 +9,7 @@
 - Render VBML templates only (`format`)
 - Clear the display (`clear`)
 - Fetch current display state (`get`)
+- Set transition options (`set-transition`)
 - Read message input from stdin (`-`)
 - Verbose HTTP debugging (`--verbose`)
 
@@ -150,6 +151,22 @@ vbcli get
 vbcli get --layout
 ```
 
+#### `set-transition`
+
+Set transition type and speed via the transition API.
+
+Required flags:
+
+- `--type`: `classic`, `wave`, `drift`, `curtain`
+- `--speed`: `fast` or `genle`
+
+Examples:
+
+```bash
+vbcli set-transition --type wave --speed fast
+vbcli set-transition --type curtain --speed genle
+```
+
 ## Template special aliases
 
 For `send`, named codes in `{...}` are converted before VBML (for example `{green}` -> `{66}`).
@@ -178,6 +195,7 @@ vbcli send --help
 vbcli format --help
 vbcli clear --help
 vbcli get --help
+vbcli set-transition --help
 ```
 
 ## Development

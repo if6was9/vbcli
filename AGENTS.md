@@ -23,6 +23,7 @@ Top-level commands:
 - `vbcli format <message|->`
 - `vbcli clear`
 - `vbcli get`
+- `vbcli set-transition --type <...> --speed <...>`
 
 Global flags:
 
@@ -69,6 +70,13 @@ Cloud API read call:
 - Endpoint: `GET https://cloud.vestaboard.com/`
 - Prints response JSON directly to stdout for `get`.
 - `get --layout` prints only the `currentMessage.layout` string.
+
+Transition API call:
+
+- Endpoint: `PUT https://cloud.vestaboard.com/transition`
+- Payload:
+  - `transition`: `classic|wave|drift|curtain`
+  - `transitionSpeed`: `fast|gentle`
 
 VBML compose call (`send` command):
 

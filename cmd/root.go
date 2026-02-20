@@ -21,10 +21,12 @@ const (
 )
 
 type options struct {
-	model   string
-	align   string
-	justify string
-	verbose bool
+	model           string
+	align           string
+	justify         string
+	transitionType  string
+	transitionSpeed string
+	verbose         bool
 }
 
 func NewRootCmd(stdin io.Reader, stdout, stderr io.Writer) *cobra.Command {
@@ -37,7 +39,7 @@ func NewRootCmd(stdin io.Reader, stdout, stderr io.Writer) *cobra.Command {
 		SilenceErrors: true,
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			_ = cmd.Help()
-			return errors.New("a subcommand is required: send-raw, send, format, clear, or get")
+			return errors.New("a subcommand is required: send-raw, send, format, clear, get, or set-transition")
 		},
 	}
 
@@ -109,7 +111,20 @@ func NewRootCmd(stdin io.Reader, stdout, stderr io.Writer) *cobra.Command {
 	}
 	getCmd.Flags().BoolP("layout", "l", false, "Print only currentMessage.layout")
 
-	cmd.AddCommand(sendRawCmd, sendCmd, formatCmd, clearCmd, getCmd)
+	setTransitionCmd := &cobra.Command{
+		Use:   "set-transition",
+		Short: "Set display transition type and speed",
+		Args:  exactArgsWithHelp(0),
+		RunE: func(cmd *cobra.Command, _ []string) error {
+			return runSetTransition(cmd, stderr, opts)
+		},
+	}
+	setTransitionCmd.Flags().StringVar(&opts.transitionType, "type", "", "Transition type: classic, wave, drift, curtain")
+	setTransitionCmd.Flags().StringVar(&opts.transitionSpeed, "speed", "", "Transition speed: fast or genle")
+	_ = setTransitionCmd.MarkFlagRequired("type")
+	_ = setTransitionCmd.MarkFlagRequired("speed")
+
+	cmd.AddCommand(sendRawCmd, sendCmd, formatCmd, clearCmd, getCmd, setTransitionCmd)
 
 	return cmd
 }
@@ -210,6 +225,25 @@ func runGet(cmd *cobra.Command, stdout, stderr io.Writer, opts *options, layoutO
 	return nil
 }
 
+func runSetTransition(cmd *cobra.Command, stderr io.Writer, opts *options) error {
+	ctx := cmd.Context()
+	client, err := buildClient(stderr, opts)
+	if err != nil {
+		return err
+	}
+
+	transitionType, err := resolveTransitionType(opts.transitionType)
+	if err != nil {
+		return usageError(cmd, err)
+	}
+	transitionSpeed, err := resolveTransitionSpeed(opts.transitionSpeed)
+	if err != nil {
+		return usageError(cmd, err)
+	}
+
+	return client.SetTransition(ctx, transitionType, transitionSpeed)
+}
+
 func extractLayout(stateJSON []byte) (string, error) {
 	var payload struct {
 		CurrentMessage struct {
@@ -277,6 +311,28 @@ func resolveJustify(value string) (string, error) {
 		return justify, nil
 	default:
 		return "", fmt.Errorf("invalid --justify %q (expected \"left\", \"center\", \"right\", or \"justified\")", value)
+	}
+}
+
+func resolveTransitionType(value string) (string, error) {
+	v := strings.ToLower(strings.TrimSpace(value))
+	switch v {
+	case "classic", "wave", "drift", "curtain":
+		return v, nil
+	default:
+		return "", fmt.Errorf("invalid --type %q (expected \"classic\", \"wave\", \"drift\", or \"curtain\")", value)
+	}
+}
+
+func resolveTransitionSpeed(value string) (string, error) {
+	v := strings.ToLower(strings.TrimSpace(value))
+	switch v {
+	case "fast":
+		return "fast", nil
+	case "genle", "gentle":
+		return "gentle", nil
+	default:
+		return "", fmt.Errorf("invalid --speed %q (expected \"fast\" or \"genle\")", value)
 	}
 }
 

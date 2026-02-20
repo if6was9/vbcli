@@ -238,6 +238,44 @@ func TestGetLayoutExtractionMissing(t *testing.T) {
 	}
 }
 
+func TestResolveTransitionType(t *testing.T) {
+	t.Parallel()
+
+	valid := []string{"classic", "wave", "drift", "curtain"}
+	for _, v := range valid {
+		got, err := resolveTransitionType(v)
+		if err != nil {
+			t.Fatalf("unexpected error for %q: %v", v, err)
+		}
+		if got != v {
+			t.Fatalf("got %q, want %q", got, v)
+		}
+	}
+	if _, err := resolveTransitionType("other"); err == nil {
+		t.Fatal("expected error")
+	}
+}
+
+func TestResolveTransitionSpeed(t *testing.T) {
+	t.Parallel()
+
+	got, err := resolveTransitionSpeed("fast")
+	if err != nil || got != "fast" {
+		t.Fatalf("got %q, err %v", got, err)
+	}
+	got, err = resolveTransitionSpeed("genle")
+	if err != nil || got != "gentle" {
+		t.Fatalf("got %q, err %v", got, err)
+	}
+	got, err = resolveTransitionSpeed("gentle")
+	if err != nil || got != "gentle" {
+		t.Fatalf("got %q, err %v", got, err)
+	}
+	if _, err := resolveTransitionSpeed("slow"); err == nil {
+		t.Fatal("expected error")
+	}
+}
+
 func TestResolveCommandInputFromStdinWhenArgMissing(t *testing.T) {
 	t.Parallel()
 
@@ -280,7 +318,7 @@ func TestSubcommandsExist(t *testing.T) {
 	t.Parallel()
 
 	root := NewRootCmd(strings.NewReader(""), &bytes.Buffer{}, &bytes.Buffer{})
-	want := map[string]bool{"send-raw": false, "send": false, "format": false, "clear": false, "get": false}
+	want := map[string]bool{"send-raw": false, "send": false, "format": false, "clear": false, "get": false, "set-transition": false}
 	for _, sub := range root.Commands() {
 		if _, ok := want[sub.Name()]; ok {
 			want[sub.Name()] = true

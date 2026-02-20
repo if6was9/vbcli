@@ -98,6 +98,42 @@ func (c *Client) GetCurrent(ctx context.Context) ([]byte, error) {
 	return respBody, nil
 }
 
+func (c *Client) SetTransition(ctx context.Context, transitionType, transitionSpeed string) error {
+	payload := map[string]string{
+		"transition":      transitionType,
+		"transitionSpeed": transitionSpeed,
+	}
+	body, err := json.Marshal(payload)
+	if err != nil {
+		return fmt.Errorf("marshal payload: %w", err)
+	}
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodPut, c.baseURL+"/transition", bytes.NewReader(body))
+	if err != nil {
+		return fmt.Errorf("build request: %w", err)
+	}
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set(headerName, c.apiKey)
+	c.logHTTP("request", req.URL.String(), body, 0)
+
+	resp, err := c.httpClient.Do(req)
+	if err != nil {
+		return fmt.Errorf("send request: %w", err)
+	}
+	defer resp.Body.Close()
+
+	respBody, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return fmt.Errorf("read API response: %w", err)
+	}
+	c.logHTTP("response", req.URL.String(), respBody, resp.StatusCode)
+
+	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+		return fmt.Errorf("vestaboard API returned %s: %s", resp.Status, strings.TrimSpace(string(respBody)))
+	}
+	return nil
+}
+
 func (c *Client) FormatMessage(ctx context.Context, message, model, align, justify string) ([][]int, error) {
 	payload := map[string]any{
 		"components": []map[string]any{

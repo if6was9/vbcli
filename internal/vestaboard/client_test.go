@@ -323,3 +323,35 @@ func TestFormatMessageNoteIncludesStyle(t *testing.T) {
 		t.Fatalf("unexpected component style: %#v", gotBody.Components)
 	}
 }
+
+func TestSetTransition(t *testing.T) {
+	t.Parallel()
+
+	var gotBody map[string]string
+	var gotMethod string
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		gotMethod = r.Method
+		if err := json.NewDecoder(r.Body).Decode(&gotBody); err != nil {
+			t.Fatalf("decode body: %v", err)
+		}
+		w.WriteHeader(http.StatusNoContent)
+	}))
+	defer server.Close()
+
+	client := &Client{
+		baseURL:    server.URL,
+		apiKey:     "abc123",
+		httpClient: server.Client(),
+	}
+
+	if err := client.SetTransition(context.Background(), "wave", "gentle"); err != nil {
+		t.Fatalf("set transition: %v", err)
+	}
+	if gotMethod != http.MethodPut {
+		t.Fatalf("method = %q, want %q", gotMethod, http.MethodPut)
+	}
+	if gotBody["transition"] != "wave" || gotBody["transitionSpeed"] != "gentle" {
+		t.Fatalf("unexpected payload: %#v", gotBody)
+	}
+}
