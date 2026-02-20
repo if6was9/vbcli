@@ -1,6 +1,6 @@
 # vbcli
 
-`vbcli` is a Go CLI for sending messages to a Vestaboard display through the Vestaboard Cloud API.
+`vbcli` is a CLI that allows you to interact with a Vestaboard display through the Vestaboard Cloud API.
 
 ## Features
 
