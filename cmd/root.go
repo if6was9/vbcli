@@ -89,7 +89,6 @@ func runRaw(cmd *cobra.Command, stdin io.Reader, stdout, stderr io.Writer, opts 
 	if err := client.SendCharacters(ctx, characters); err != nil {
 		return err
 	}
-	_, _ = fmt.Fprintln(stdout, "sent raw payload")
 	return nil
 }
 
