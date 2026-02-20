@@ -1,4 +1,4 @@
-![vbcli](vbcli.png)
+![vbcli](hero.png)
 
 # vbcli
 
