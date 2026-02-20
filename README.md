@@ -1,3 +1,5 @@
+[!vbcli.png]ó
+
 # vbcli
 
 `vbcli` is a CLI that allows you to interact with a Vestaboard display through the Vestaboard Cloud API.
