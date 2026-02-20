@@ -20,6 +20,7 @@ Top-level commands:
 
 - `vbcli send-raw <characters-json|->`
 - `vbcli send <message|->`
+- `vbcli clear`
 
 Global flags:
 
@@ -30,6 +31,8 @@ Global flags:
 - `-m, --model` (`flagship` or `note`)
 - `-a, --align` (`top`, `center`, `bottom`)
 - `-j, --justify` (`left`, `center`, `right`, `justified`)
+
+`clear` supports the same layout/model flags as `send`.
 
 Notes:
 
@@ -78,6 +81,10 @@ For `send` input:
 1. Decode escaped sequences (for example `\n` -> newline).
 2. Substitute named `{alias}` tokens to numeric codes (for example `{green}` -> `{66}`).
 3. Preserve VBML `{{...}}` expressions as-is.
+
+For `clear`:
+
+- Behavior must remain equivalent to `vbcli send ''`.
 
 For `send-raw` input:
 

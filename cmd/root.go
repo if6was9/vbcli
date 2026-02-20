@@ -37,7 +37,7 @@ func NewRootCmd(stdin io.Reader, stdout, stderr io.Writer) *cobra.Command {
 		SilenceErrors: true,
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			_ = cmd.Help()
-			return errors.New("a subcommand is required: send-raw or send")
+			return errors.New("a subcommand is required: send-raw, send, or clear")
 		},
 	}
 
@@ -66,7 +66,19 @@ func NewRootCmd(stdin io.Reader, stdout, stderr io.Writer) *cobra.Command {
 	sendCmd.Flags().StringVarP(&opts.align, "align", "a", "center", "VBML align for send: top, center, or bottom")
 	sendCmd.Flags().StringVarP(&opts.justify, "justify", "j", "center", "VBML justify for send: left, center, right, or justified")
 
-	cmd.AddCommand(sendRawCmd, sendCmd)
+	clearCmd := &cobra.Command{
+		Use:   "clear",
+		Short: "Clear the display (equivalent to `vbcli send ''`)",
+		Args:  exactArgsWithHelp(0),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return runSend(cmd, stdin, stdout, stderr, opts, "")
+		},
+	}
+	clearCmd.Flags().StringVarP(&opts.model, flagModel, "m", "", "VBML model for clear: flagship or note")
+	clearCmd.Flags().StringVarP(&opts.align, "align", "a", "center", "VBML align for clear: top, center, or bottom")
+	clearCmd.Flags().StringVarP(&opts.justify, "justify", "j", "center", "VBML justify for clear: left, center, right, or justified")
+
+	cmd.AddCommand(sendRawCmd, sendCmd, clearCmd)
 
 	return cmd
 }

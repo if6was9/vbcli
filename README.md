@@ -6,6 +6,7 @@
 
 - Send raw character payloads (`send-raw`)
 - Render VBML templates and send the result (`send`)
+- Clear the display (`clear`)
 - Read message input from stdin (`-`)
 - Verbose HTTP debugging (`--verbose`)
 
@@ -99,6 +100,21 @@ vbcli send "hello {green}"
 echo "From stdin" | vbcli send -
 ```
 
+#### `clear`
+
+Clear the display. Equivalent to:
+
+```bash
+vbcli send ''
+```
+
+Examples:
+
+```bash
+vbcli clear
+vbcli clear -m note
+```
+
 ## Template special aliases
 
 For `send`, named codes in `{...}` are converted before VBML (for example `{green}` -> `{66}`).
@@ -124,6 +140,7 @@ vbcli --help
 vbcli help
 vbcli send-raw --help
 vbcli send --help
+vbcli clear --help
 ```
 
 ## Development
