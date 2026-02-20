@@ -385,9 +385,6 @@ func resolveTransitionSpeed(value string) (string, error) {
 
 func looksLikeRawCharactersJSON(input string) bool {
 	trimmed := strings.TrimSpace(input)
-	if len(trimmed) < 10 {
-		return false
-	}
 	if !strings.HasPrefix(trimmed, "[") || !strings.HasSuffix(trimmed, "]") {
 		return false
 	}
@@ -395,6 +392,11 @@ func looksLikeRawCharactersJSON(input string) bool {
 	var characters [][]int
 	if err := json.Unmarshal([]byte(trimmed), &characters); err != nil {
 		return false
+	}
+	for _, row := range characters {
+		if len(row) == 0 {
+			return false
+		}
 	}
 	return true
 }
