@@ -10,43 +10,11 @@ import (
 	"testing"
 )
 
-func TestNewClientMissingAPIKey(t *testing.T) {
+func TestNewClientMissingToken(t *testing.T) {
 	t.Parallel()
 
 	if _, err := NewClient(""); err == nil {
 		t.Fatal("expected missing key error")
-	}
-}
-
-func TestSendText(t *testing.T) {
-	t.Parallel()
-
-	var gotHeader string
-	var gotBody map[string]string
-
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		gotHeader = r.Header.Get(headerName)
-		if err := json.NewDecoder(r.Body).Decode(&gotBody); err != nil {
-			t.Fatalf("decode body: %v", err)
-		}
-		w.WriteHeader(http.StatusOK)
-	}))
-	defer server.Close()
-
-	client := &Client{
-		baseURL:    server.URL,
-		apiKey:     "abc123",
-		httpClient: server.Client(),
-	}
-
-	if err := client.SendText(context.Background(), "Hello World"); err != nil {
-		t.Fatalf("send text: %v", err)
-	}
-	if gotHeader != "abc123" {
-		t.Fatalf("header = %q, want %q", gotHeader, "abc123")
-	}
-	if gotBody["text"] != "Hello World" {
-		t.Fatalf("text = %q", gotBody["text"])
 	}
 }
 
@@ -65,7 +33,7 @@ func TestSendCharacters(t *testing.T) {
 
 	client := &Client{
 		baseURL:    server.URL,
-		apiKey:     "abc123",
+		token:      "abc123",
 		httpClient: server.Client(),
 	}
 
@@ -92,7 +60,7 @@ func TestGetCurrent(t *testing.T) {
 
 	client := &Client{
 		baseURL:    server.URL,
-		apiKey:     "abc123",
+		token:      "abc123",
 		httpClient: server.Client(),
 	}
 
@@ -108,10 +76,14 @@ func TestGetCurrent(t *testing.T) {
 	}
 }
 
-func TestSendTextConflictIsNotError(t *testing.T) {
+func TestSendCharactersConflictIsNotError(t *testing.T) {
 	t.Parallel()
 
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+	var gotBody map[string][][]int
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if err := json.NewDecoder(r.Body).Decode(&gotBody); err != nil {
+			t.Fatalf("decode body: %v", err)
+		}
 		w.WriteHeader(http.StatusConflict)
 		_, _ = w.Write([]byte(`{"message":"already current"}`))
 	}))
@@ -119,12 +91,15 @@ func TestSendTextConflictIsNotError(t *testing.T) {
 
 	client := &Client{
 		baseURL:    server.URL,
-		apiKey:     "abc123",
+		token:      "abc123",
 		httpClient: server.Client(),
 	}
 
-	if err := client.SendText(context.Background(), "Hello World"); err != nil {
+	if err := client.SendCharacters(context.Background(), [][]int{{1, 2}}); err != nil {
 		t.Fatalf("expected 409 to be non-error, got: %v", err)
+	}
+	if len(gotBody["characters"]) != 1 {
+		t.Fatalf("expected characters payload, got %#v", gotBody)
 	}
 }
 
@@ -144,14 +119,14 @@ func TestVerboseLogsRequestURL(t *testing.T) {
 	client.baseURL = server.URL
 	client.httpClient = server.Client()
 
-	if err := client.SendText(context.Background(), "Hello World"); err != nil {
-		t.Fatalf("send text: %v", err)
+	if err := client.SendCharacters(context.Background(), [][]int{{65}}); err != nil {
+		t.Fatalf("send characters: %v", err)
 	}
 
 	if !strings.Contains(logs.String(), "request URL: "+server.URL+"/") {
 		t.Fatalf("expected request URL in logs, got %q", logs.String())
 	}
-	if !strings.Contains(logs.String(), "request payload:\n{\n  \"text\": \"Hello World\"\n}") {
+	if !strings.Contains(logs.String(), "request payload:\n{\n  \"characters\": [\n    [\n      65\n    ]\n  ]\n}") {
 		t.Fatalf("expected formatted request payload in logs, got %q", logs.String())
 	}
 	if !strings.Contains(logs.String(), "response status: 200") {
@@ -341,7 +316,7 @@ func TestSetTransition(t *testing.T) {
 
 	client := &Client{
 		baseURL:    server.URL,
-		apiKey:     "abc123",
+		token:      "abc123",
 		httpClient: server.Client(),
 	}
 
@@ -370,7 +345,7 @@ func TestGetTransition(t *testing.T) {
 
 	client := &Client{
 		baseURL:    server.URL,
-		apiKey:     "abc123",
+		token:      "abc123",
 		httpClient: server.Client(),
 	}
 

@@ -13,19 +13,20 @@ import (
 )
 
 const (
-	baseURL        = "https://cloud.vestaboard.com"
-	writePath      = "/"
+	cloudBaseURL   = "https://cloud.vestaboard.com"
+	cloudRootPath  = "/"
+	transitionPath = "/transition"
 	vbmlBaseURL    = "https://vbml.vestaboard.com"
 	vbmlFormatPath = "/compose"
 	headerName     = "X-vestaboard-token"
 )
 
-var errMissingAPIKey = errors.New("VESTABOARD_TOKEN is not set")
+var errMissingToken = errors.New("VESTABOARD_TOKEN is not set")
 
 type Client struct {
 	baseURL    string
 	vbmlURL    string
-	apiKey     string
+	token      string
 	httpClient *http.Client
 	verbose    bool
 	logWriter  io.Writer
@@ -40,15 +41,15 @@ func WithVerboseLogging(enabled bool, writer io.Writer) Option {
 	}
 }
 
-func NewClient(apiKey string, options ...Option) (*Client, error) {
-	apiKey = strings.TrimSpace(apiKey)
-	if apiKey == "" {
-		return nil, errMissingAPIKey
+func NewClient(token string, options ...Option) (*Client, error) {
+	token = strings.TrimSpace(token)
+	if token == "" {
+		return nil, errMissingToken
 	}
 	client := &Client{
-		baseURL: baseURL,
+		baseURL: cloudBaseURL,
 		vbmlURL: vbmlBaseURL,
-		apiKey:  apiKey,
+		token:   token,
 		httpClient: &http.Client{
 			Timeout: 15 * time.Second,
 		},
@@ -60,22 +61,17 @@ func NewClient(apiKey string, options ...Option) (*Client, error) {
 	return client, nil
 }
 
-func (c *Client) SendText(ctx context.Context, text string) error {
-	payload := map[string]string{"text": text}
-	return c.postMessage(ctx, payload)
-}
-
 func (c *Client) SendCharacters(ctx context.Context, characters [][]int) error {
 	payload := map[string][][]int{"characters": characters}
 	return c.postMessage(ctx, payload)
 }
 
 func (c *Client) GetCurrent(ctx context.Context) ([]byte, error) {
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, c.baseURL+writePath, nil)
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, c.cloudURL(cloudRootPath), nil)
 	if err != nil {
 		return nil, fmt.Errorf("build request: %w", err)
 	}
-	req.Header.Set(headerName, c.apiKey)
+	req.Header.Set(headerName, c.token)
 	req.Header.Set("Accept", "application/json")
 	c.logHTTP("request", req.URL.String(), nil, 0)
 
@@ -108,12 +104,12 @@ func (c *Client) SetTransition(ctx context.Context, transitionType, transitionSp
 		return fmt.Errorf("marshal payload: %w", err)
 	}
 
-	req, err := http.NewRequestWithContext(ctx, http.MethodPut, c.baseURL+"/transition", bytes.NewReader(body))
+	req, err := http.NewRequestWithContext(ctx, http.MethodPut, c.cloudURL(transitionPath), bytes.NewReader(body))
 	if err != nil {
 		return fmt.Errorf("build request: %w", err)
 	}
 	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set(headerName, c.apiKey)
+	req.Header.Set(headerName, c.token)
 	c.logHTTP("request", req.URL.String(), body, 0)
 
 	resp, err := c.httpClient.Do(req)
@@ -135,11 +131,11 @@ func (c *Client) SetTransition(ctx context.Context, transitionType, transitionSp
 }
 
 func (c *Client) GetTransition(ctx context.Context) ([]byte, error) {
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, c.baseURL+"/transition", nil)
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, c.cloudURL(transitionPath), nil)
 	if err != nil {
 		return nil, fmt.Errorf("build request: %w", err)
 	}
-	req.Header.Set(headerName, c.apiKey)
+	req.Header.Set(headerName, c.token)
 	req.Header.Set("Accept", "application/json")
 	c.logHTTP("request", req.URL.String(), nil, 0)
 
@@ -229,12 +225,12 @@ func (c *Client) postMessage(ctx context.Context, payload any) error {
 		return fmt.Errorf("marshal payload: %w", err)
 	}
 
-	req, err := http.NewRequestWithContext(ctx, http.MethodPost, c.baseURL+writePath, bytes.NewReader(body))
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, c.cloudURL(cloudRootPath), bytes.NewReader(body))
 	if err != nil {
 		return fmt.Errorf("build request: %w", err)
 	}
 	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set(headerName, c.apiKey)
+	req.Header.Set(headerName, c.token)
 	c.logHTTP("request", req.URL.String(), body, 0)
 
 	resp, err := c.httpClient.Do(req)
@@ -285,4 +281,8 @@ func prettyJSON(payload []byte) string {
 		return pretty.String()
 	}
 	return string(trimmed)
+}
+
+func (c *Client) cloudURL(path string) string {
+	return c.baseURL + path
 }

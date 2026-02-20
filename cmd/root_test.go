@@ -178,21 +178,21 @@ func TestResolveJustify(t *testing.T) {
 	}
 }
 
-func TestDecodeTemplateEscapes(t *testing.T) {
+func TestDecodeEscapes(t *testing.T) {
 	t.Parallel()
 
-	got := decodeTemplateEscapes(`Hello\nworld`)
+	got := decodeEscapes(`Hello\nworld`)
 	want := "Hello\nworld"
 	if got != want {
 		t.Fatalf("got %q, want %q", got, want)
 	}
 }
 
-func TestDecodeTemplateEscapesInvalidSequenceFallsBack(t *testing.T) {
+func TestDecodeEscapesInvalidSequenceFallsBack(t *testing.T) {
 	t.Parallel()
 
 	input := `Hello\qworld`
-	got := decodeTemplateEscapes(input)
+	got := decodeEscapes(input)
 	if got != input {
 		t.Fatalf("got %q, want %q", got, input)
 	}

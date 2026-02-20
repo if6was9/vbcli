@@ -53,7 +53,7 @@ func NewRootCmd(stdin io.Reader, stdout, stderr io.Writer) *cobra.Command {
 		Short: "Send raw characters payload to the Vestaboard API",
 		Args:  maxArgsWithHelp(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return runRaw(cmd, stdin, stdout, stderr, opts, args)
+			return runSendRaw(cmd, stdin, stdout, stderr, opts, args)
 		},
 	}
 
@@ -139,7 +139,7 @@ func NewRootCmd(stdin io.Reader, stdout, stderr io.Writer) *cobra.Command {
 	return cmd
 }
 
-func runRaw(cmd *cobra.Command, stdin io.Reader, stdout, stderr io.Writer, opts *options, args []string) error {
+func runSendRaw(cmd *cobra.Command, stdin io.Reader, stdout, stderr io.Writer, opts *options, args []string) error {
 	ctx := cmd.Context()
 	client, err := buildClient(stderr, opts)
 	if err != nil {
@@ -184,7 +184,7 @@ func runSend(cmd *cobra.Command, stdin io.Reader, stdout, stderr io.Writer, opts
 		return usageError(cmd, err)
 	}
 
-	resolved = decodeTemplateEscapes(resolved)
+	resolved = decodeEscapes(resolved)
 	resolved = substituteTemplateCharacterAliases(resolved)
 	characters, err := client.FormatMessage(ctx, resolved, model, align, justify)
 	if err != nil {
@@ -303,7 +303,7 @@ func buildClient(stderr io.Writer, opts *options) (*vestaboard.Client, error) {
 	return vestaboard.NewClient(token, vestaboard.WithVerboseLogging(opts.verbose, stderr))
 }
 
-func decodeTemplateEscapes(input string) string {
+func decodeEscapes(input string) string {
 	unquoted, err := strconv.Unquote(`"` + input + `"`)
 	if err != nil {
 		return input
