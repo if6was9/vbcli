@@ -195,6 +195,7 @@ Numeric codes are also supported directly (for example `{66}`).
 - HTTP `409 Conflict` from the Cloud API is treated as success (display already matches requested state).
 - For `send`, escaped sequences like `\n` are decoded before sending.
 - `send` accepts VBML expressions like `{{...}}`; these are preserved.
+- For `send`, if input looks like a raw characters matrix (`[...]`), it is routed through the `send-raw` behavior.
 
 ## Help
 

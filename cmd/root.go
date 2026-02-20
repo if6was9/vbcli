@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -150,14 +151,7 @@ func runSendRaw(cmd *cobra.Command, stdin io.Reader, stdout, stderr io.Writer, o
 	if err != nil {
 		return err
 	}
-	characters, err := parseCharacters(resolved)
-	if err != nil {
-		return usageError(cmd, fmt.Errorf("raw input must be a JSON array of arrays of integers: %w", err))
-	}
-	if err := client.SendCharacters(ctx, characters); err != nil {
-		return err
-	}
-	return nil
+	return sendRawResolved(ctx, cmd, client, resolved)
 }
 
 func runSend(cmd *cobra.Command, stdin io.Reader, stdout, stderr io.Writer, opts *options, args []string, formatOnly bool) error {
@@ -170,6 +164,9 @@ func runSend(cmd *cobra.Command, stdin io.Reader, stdout, stderr io.Writer, opts
 	resolved, err := resolveCommandInput(cmd, stdin, args, "message")
 	if err != nil {
 		return err
+	}
+	if looksLikeRawCharactersJSON(resolved) {
+		return sendRawResolved(ctx, cmd, client, resolved)
 	}
 	model, err := resolveModel(opts.model)
 	if err != nil {
@@ -199,6 +196,17 @@ func runSend(cmd *cobra.Command, stdin io.Reader, stdout, stderr io.Writer, opts
 			return fmt.Errorf("write output: %w", err)
 		}
 		return nil
+	}
+	if err := client.SendCharacters(ctx, characters); err != nil {
+		return err
+	}
+	return nil
+}
+
+func sendRawResolved(ctx context.Context, cmd *cobra.Command, client *vestaboard.Client, resolved string) error {
+	characters, err := parseCharacters(resolved)
+	if err != nil {
+		return usageError(cmd, fmt.Errorf("raw input must be a JSON array of arrays of integers: %w", err))
 	}
 	if err := client.SendCharacters(ctx, characters); err != nil {
 		return err
@@ -373,6 +381,11 @@ func resolveTransitionSpeed(value string) (string, error) {
 	default:
 		return "", fmt.Errorf("invalid --speed %q (expected \"fast\" or \"gentle\")", value)
 	}
+}
+
+func looksLikeRawCharactersJSON(input string) bool {
+	trimmed := strings.TrimSpace(input)
+	return strings.HasPrefix(trimmed, "[") && strings.HasSuffix(trimmed, "]")
 }
 
 func usageError(cmd *cobra.Command, err error) error {
