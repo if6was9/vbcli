@@ -7,6 +7,7 @@
 - Send raw character payloads (`send-raw`)
 - Render VBML templates and send the result (`send`)
 - Clear the display (`clear`)
+- Fetch current display state (`get`)
 - Read message input from stdin (`-`)
 - Verbose HTTP debugging (`--verbose`)
 
@@ -115,6 +116,19 @@ vbcli clear
 vbcli clear -m note
 ```
 
+#### `get`
+
+Fetch current display state and print JSON to stdout.
+
+Use `--layout` to print only `currentMessage.layout`.
+
+Example:
+
+```bash
+vbcli get
+vbcli get --layout
+```
+
 ## Template special aliases
 
 For `send`, named codes in `{...}` are converted before VBML (for example `{green}` -> `{66}`).
@@ -141,6 +155,7 @@ vbcli help
 vbcli send-raw --help
 vbcli send --help
 vbcli clear --help
+vbcli get --help
 ```
 
 ## Development

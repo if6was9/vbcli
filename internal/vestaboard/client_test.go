@@ -78,6 +78,36 @@ func TestSendCharacters(t *testing.T) {
 	}
 }
 
+func TestGetCurrent(t *testing.T) {
+	t.Parallel()
+
+	var gotHeader string
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		gotHeader = r.Header.Get(headerName)
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		_, _ = w.Write([]byte(`{"currentMessage":{"id":"abc"}}`))
+	}))
+	defer server.Close()
+
+	client := &Client{
+		baseURL:    server.URL,
+		apiKey:     "abc123",
+		httpClient: server.Client(),
+	}
+
+	body, err := client.GetCurrent(context.Background())
+	if err != nil {
+		t.Fatalf("get current: %v", err)
+	}
+	if gotHeader != "abc123" {
+		t.Fatalf("header = %q, want %q", gotHeader, "abc123")
+	}
+	if strings.TrimSpace(string(body)) != `{"currentMessage":{"id":"abc"}}` {
+		t.Fatalf("unexpected body: %s", string(body))
+	}
+}
+
 func TestSendTextConflictIsNotError(t *testing.T) {
 	t.Parallel()
 

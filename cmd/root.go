@@ -15,9 +15,9 @@ import (
 )
 
 const (
-	flagModel           = "model"
-	envVestaboardModel  = "VESTABOARD_MODEL"
-	envVestaboardToken  = "VESTABOARD_TOKEN"
+	flagModel          = "model"
+	envVestaboardModel = "VESTABOARD_MODEL"
+	envVestaboardToken = "VESTABOARD_TOKEN"
 )
 
 type options struct {
@@ -37,7 +37,7 @@ func NewRootCmd(stdin io.Reader, stdout, stderr io.Writer) *cobra.Command {
 		SilenceErrors: true,
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			_ = cmd.Help()
-			return errors.New("a subcommand is required: send-raw, send, or clear")
+			return errors.New("a subcommand is required: send-raw, send, clear, or get")
 		},
 	}
 
@@ -78,7 +78,21 @@ func NewRootCmd(stdin io.Reader, stdout, stderr io.Writer) *cobra.Command {
 	clearCmd.Flags().StringVarP(&opts.align, "align", "a", "center", "VBML align for clear: top, center, or bottom")
 	clearCmd.Flags().StringVarP(&opts.justify, "justify", "j", "center", "VBML justify for clear: left, center, right, or justified")
 
-	cmd.AddCommand(sendRawCmd, sendCmd, clearCmd)
+	getCmd := &cobra.Command{
+		Use:   "get",
+		Short: "Fetch the current display state as JSON",
+		Args:  exactArgsWithHelp(0),
+		RunE: func(cmd *cobra.Command, _ []string) error {
+			layoutOnly, err := cmd.Flags().GetBool("layout")
+			if err != nil {
+				return err
+			}
+			return runGet(cmd, stdout, stderr, opts, layoutOnly)
+		},
+	}
+	getCmd.Flags().BoolP("layout", "l", false, "Print only currentMessage.layout")
+
+	cmd.AddCommand(sendRawCmd, sendCmd, clearCmd, getCmd)
 
 	return cmd
 }
@@ -138,6 +152,50 @@ func runSend(cmd *cobra.Command, stdin io.Reader, stdout, stderr io.Writer, opts
 		return err
 	}
 	return nil
+}
+
+func runGet(cmd *cobra.Command, stdout, stderr io.Writer, opts *options, layoutOnly bool) error {
+	ctx := cmd.Context()
+	client, err := buildClient(stderr, opts)
+	if err != nil {
+		return err
+	}
+
+	stateJSON, err := client.GetCurrent(ctx)
+	if err != nil {
+		return err
+	}
+
+	if layoutOnly {
+		layout, err := extractLayout(stateJSON)
+		if err != nil {
+			return err
+		}
+		if _, err := fmt.Fprintln(stdout, layout); err != nil {
+			return fmt.Errorf("write output: %w", err)
+		}
+		return nil
+	}
+
+	if _, err := fmt.Fprintln(stdout, string(stateJSON)); err != nil {
+		return fmt.Errorf("write output: %w", err)
+	}
+	return nil
+}
+
+func extractLayout(stateJSON []byte) (string, error) {
+	var payload struct {
+		CurrentMessage struct {
+			Layout string `json:"layout"`
+		} `json:"currentMessage"`
+	}
+	if err := json.Unmarshal(stateJSON, &payload); err != nil {
+		return "", fmt.Errorf("decode API response: %w", err)
+	}
+	if payload.CurrentMessage.Layout == "" {
+		return "", errors.New("currentMessage.layout not found")
+	}
+	return payload.CurrentMessage.Layout, nil
 }
 
 func buildClient(stderr io.Writer, opts *options) (*vestaboard.Client, error) {

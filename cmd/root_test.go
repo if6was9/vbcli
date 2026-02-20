@@ -212,11 +212,31 @@ func TestTemplateLayoutFlagShorthands(t *testing.T) {
 	}
 }
 
+func TestGetLayoutExtraction(t *testing.T) {
+	t.Parallel()
+
+	layout, err := extractLayout([]byte(`{"currentMessage":{"layout":"1234"}}`))
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if layout != "1234" {
+		t.Fatalf("got %q, want %q", layout, "1234")
+	}
+}
+
+func TestGetLayoutExtractionMissing(t *testing.T) {
+	t.Parallel()
+
+	if _, err := extractLayout([]byte(`{"currentMessage":{"id":"x"}}`)); err == nil {
+		t.Fatal("expected error")
+	}
+}
+
 func TestSubcommandsExist(t *testing.T) {
 	t.Parallel()
 
 	root := NewRootCmd(strings.NewReader(""), &bytes.Buffer{}, &bytes.Buffer{})
-	want := map[string]bool{"send-raw": false, "send": false, "clear": false}
+	want := map[string]bool{"send-raw": false, "send": false, "clear": false, "get": false}
 	for _, sub := range root.Commands() {
 		if _, ok := want[sub.Name()]; ok {
 			want[sub.Name()] = true

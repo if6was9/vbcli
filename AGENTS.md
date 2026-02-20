@@ -21,6 +21,7 @@ Top-level commands:
 - `vbcli send-raw <characters-json|->`
 - `vbcli send <message|->`
 - `vbcli clear`
+- `vbcli get`
 
 Global flags:
 
@@ -57,6 +58,12 @@ Cloud API write call:
 - Content type: `application/json`
 - Payload shape for `send-raw` and final `send` step:
   - `{"characters": [[...], ...]}`
+
+Cloud API read call:
+
+- Endpoint: `GET https://cloud.vestaboard.com/`
+- Prints response JSON directly to stdout for `get`.
+- `get --layout` prints only the `currentMessage.layout` string.
 
 VBML compose call (`send` command):
 
